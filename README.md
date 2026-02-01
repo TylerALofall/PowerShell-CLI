@@ -213,6 +213,34 @@ Export-EvidenceChainReport -ChainPath "C:\Evidence\Chains\CLAIM-2024-001.json" -
    - Errors caught and reported clearly
 ```
 
+## Testing
+
+### Run Module Tests
+
+A test script is provided to verify the PowerShell modules are working correctly:
+
+```bash
+pwsh -File examples/test-modules.ps1
+```
+
+This will run 7 tests covering:
+- Module loading
+- Metadata extraction
+- Document integrity validation
+- Evidence chain creation
+- Evidence item addition
+- Chain integrity validation
+
+### Run Complete Workflow Example
+
+To see the full system in action:
+
+```bash
+pwsh -File examples/complete-workflow.ps1
+```
+
+This creates a complete example with evidence chains, sample documents, and reports.
+
 ## Directory Structure
 
 ```
