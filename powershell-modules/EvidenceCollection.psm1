@@ -80,7 +80,7 @@ function New-EvidenceChain {
     # Save to file
     $evidenceChain | ConvertTo-Json -Depth 10 | Out-File -FilePath $chainPath -Encoding utf8
     
-    Write-Output "Evidence chain created: $chainPath"
+    Write-Verbose "Evidence chain created: $chainPath"
     return $evidenceChain
 }
 
@@ -134,10 +134,10 @@ function Add-EvidenceItem {
     )
     
     # Load existing chain
-    $chain = Get-Content -Path $ChainPath -Raw | ConvertFrom-Json
+    $chainData = Get-Content -Path $ChainPath -Raw | ConvertFrom-Json
     
-    if ($chain.ClaimId -ne $ClaimId) {
-        throw "Claim ID mismatch. Expected: $($chain.ClaimId), Got: $ClaimId"
+    if ($chainData.ClaimId -ne $ClaimId) {
+        throw "Claim ID mismatch. Expected: $($chainData.ClaimId), Got: $ClaimId"
     }
     
     # Create evidence item
@@ -161,14 +161,28 @@ function Add-EvidenceItem {
         $evidenceItem.Verified = $true
     }
     
-    # Add to chain
-    $chain.EvidenceItems += $evidenceItem
-    $chain.LastUpdated = Get-Date
+    # Convert to ArrayList to ensure we can add items
+    $evidenceList = [System.Collections.ArrayList]@($chainData.EvidenceItems)
+    $null = $evidenceList.Add($evidenceItem)
+    
+    # Rebuild chain object
+    $chain = [PSCustomObject]@{
+        ClaimId         = $chainData.ClaimId
+        ClaimType       = $chainData.ClaimType
+        Description     = $chainData.Description
+        CreatedDate     = $chainData.CreatedDate
+        LastUpdated     = Get-Date
+        Status          = $chainData.Status
+        EvidenceItems   = $evidenceList.ToArray()
+        ChainIntegrity  = $chainData.ChainIntegrity
+        Custodian       = $chainData.Custodian
+        ComputerName    = $chainData.ComputerName
+    }
     
     # Save updated chain
     $chain | ConvertTo-Json -Depth 10 | Out-File -FilePath $ChainPath -Encoding utf8
     
-    Write-Output "Evidence item added: $evidenceId"
+    Write-Verbose "Evidence item added: $evidenceId"
     return $evidenceItem
 }
 
@@ -434,7 +448,7 @@ Report generated on $($validation.ValidationDate)
         }
     }
     
-    Write-Output "Report exported to: $OutputPath"
+    Write-Host "Report exported to: $OutputPath"
 }
 
 # Export module members

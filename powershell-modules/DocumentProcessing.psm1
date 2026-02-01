@@ -207,7 +207,7 @@ function Export-DocumentEvidence {
     $manifestPath = Join-Path -Path $evidenceDir -ChildPath "manifest.json"
     $manifest | ConvertTo-Json -Depth 5 | Out-File -FilePath $manifestPath -Encoding utf8
     
-    Write-Output "Evidence package created: $evidenceDir"
+    Write-Verbose "Evidence package created: $evidenceDir"
     return $manifest
 }
 
