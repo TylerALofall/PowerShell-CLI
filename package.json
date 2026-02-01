@@ -1,0 +1,30 @@
+{
+  "name": "powershell-mcp-toolbox",
+  "version": "1.0.0",
+  "description": "PowerShell MCP server for document processing, evidence collection, and model training automation with strict validation",
+  "type": "module",
+  "main": "src/index.js",
+  "bin": {
+    "powershell-mcp": "./src/index.js"
+  },
+  "scripts": {
+    "start": "node src/index.js",
+    "test": "node --test"
+  },
+  "keywords": [
+    "mcp",
+    "powershell",
+    "document-processing",
+    "evidence-collection",
+    "model-training",
+    "legal-automation"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.4"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
