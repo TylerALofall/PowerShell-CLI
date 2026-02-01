@@ -1,0 +1,39 @@
+# Dependencies
+node_modules/
+package-lock.json
+
+# Logs
+*.log
+logs/
+
+# Build artifacts
+dist/
+build/
+*.dll
+*.exe
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# PowerShell artifacts
+*.ps1xml
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Evidence and training data (sensitive)
+evidence/
+training-data/
+models/
+
+# Config overrides (may contain sensitive info)
+config.local.json

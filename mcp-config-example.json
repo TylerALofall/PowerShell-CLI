@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "powershell-toolbox": {
+      "command": "node",
+      "args": [
+        "/absolute/path/to/PowerShell-CLI/src/index.js"
+      ],
+      "description": "PowerShell MCP Toolbox for document processing, evidence collection, and strict PowerShell automation"
+    }
+  }
+}
