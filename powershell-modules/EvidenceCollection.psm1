@@ -64,12 +64,13 @@ function New-EvidenceChain {
         return Get-Content -Path $chainPath -Raw | ConvertFrom-Json
     }
     
+    $now = Get-Date
     $evidenceChain = [PSCustomObject]@{
         ClaimId         = $ClaimId
         ClaimType       = $ClaimType
         Description     = $Description
-        CreatedDate     = Get-Date
-        LastUpdated     = Get-Date
+        CreatedDate     = $now
+        LastUpdated     = $now
         Status          = 'Active'
         EvidenceItems   = @()
         ChainIntegrity  = 'Valid'

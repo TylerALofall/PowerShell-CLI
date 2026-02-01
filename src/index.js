@@ -288,13 +288,14 @@ class PowerShellMCPServer {
   async storeClaimContext(args) {
     const { claim_id, claim_type, description, context } = args;
 
+    const now = new Date();
     contextStore.claims[claim_id] = {
       claim_id,
       claim_type: claim_type || 'general',
       description,
       context: context || {},
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
+      created_at: now.toISOString(),
+      updated_at: now.toISOString(),
     };
 
     return {
@@ -389,6 +390,10 @@ class PowerShellMCPServer {
   async executePowerShellStrict(args) {
     const { script, working_directory, validate_output = true } = args;
 
+    // Write script to temporary file for safe execution
+    const tmpDir = '/tmp';
+    const scriptPath = `${tmpDir}/pwsh-script-${Date.now()}.ps1`;
+    
     // Wrap script with strict mode
     const strictScript = `
 Set-StrictMode -Version Latest
@@ -402,11 +407,18 @@ try {
 }
 `;
 
-    const command = `pwsh -NoProfile -Command ${JSON.stringify(strictScript)}`;
-
     try {
+      // Write script to file
+      await fs.writeFile(scriptPath, strictScript, 'utf8');
+
+      // Execute using -File parameter for safety
+      const command = `pwsh -NoProfile -File "${scriptPath}"`;
+
       const options = working_directory ? { cwd: working_directory } : {};
       const { stdout, stderr } = await execAsync(command, options);
+
+      // Clean up script file
+      await fs.unlink(scriptPath).catch(() => {});
 
       if (stderr && stderr.trim()) {
         return {
@@ -439,6 +451,8 @@ try {
         ],
       };
     } catch (error) {
+      // Clean up script file on error
+      await fs.unlink(scriptPath).catch(() => {});
       throw new Error(`PowerShell strict mode validation failed: ${error.message}`);
     }
   }
@@ -447,12 +461,14 @@ try {
     const { file_path, processing_type, claim_id } = args;
 
     // Build PowerShell script based on processing type
+    // Use forward slashes which work on all platforms in PowerShell
+    const normalizedPath = file_path.replace(/\\/g, '/');
     let script = '';
 
     switch (processing_type) {
       case 'extract_text':
         script = `
-$filePath = "${file_path.replace(/\\/g, '\\\\')}"
+$filePath = '${normalizedPath}'
 if (-not (Test-Path $filePath)) {
     throw "File not found: $filePath"
 }
@@ -460,13 +476,18 @@ $content = Get-Content -Path $filePath -Raw
 Write-Output "File: $filePath"
 Write-Output "Size: $((Get-Item $filePath).Length) bytes"
 Write-Output "Content preview:"
-Write-Output ($content.Substring(0, [Math]::Min(500, $content.Length)))
+if ($content.Length -gt 0) {
+    $previewLength = [Math]::Min(500, $content.Length)
+    Write-Output $content.Substring(0, $previewLength)
+} else {
+    Write-Output "(empty file)"
+}
 `;
         break;
 
       case 'extract_metadata':
         script = `
-$filePath = "${file_path.replace(/\\/g, '\\\\')}"
+$filePath = '${normalizedPath}'
 if (-not (Test-Path $filePath)) {
     throw "File not found: $filePath"
 }
@@ -486,7 +507,7 @@ $metadata | ConvertTo-Json -Depth 3
 
       case 'validate_format':
         script = `
-$filePath = "${file_path.replace(/\\/g, '\\\\')}"
+$filePath = '${normalizedPath}'
 if (-not (Test-Path $filePath)) {
     throw "File not found: $filePath"
 }
@@ -547,8 +568,15 @@ if ($item.Length -eq 0) {
     const evidence = contextStore.evidence[claim_id] || {};
     const evidenceCount = Object.keys(evidence).length;
 
+    // Build evidence list safely using an array
+    const evidenceList = Object.entries(evidence).map(([id, ev], idx) => {
+      // Escape single quotes in descriptions for PowerShell
+      const safeDesc = ev.description.replace(/'/g, "''");
+      return `Write-Output "${idx + 1}. ${id} (${ev.evidence_type}) - ${safeDesc.substring(0, 50)}"`;
+    });
+
     const script = `
-$claimId = "${claim_id}"
+$claimId = '${claim_id}'
 $evidenceCount = ${evidenceCount}
 
 Write-Output "=== Evidence Chain Validation ==="
@@ -566,12 +594,7 @@ Write-Output "Validation Status: PASSED"
 Write-Output "All evidence items are properly linked to the claim"
 Write-Output ""
 Write-Output "Evidence Chain:"
-${Object.entries(evidence)
-  .map(
-    ([id, ev], idx) =>
-      `Write-Output "${idx + 1}. ${id} (${ev.evidence_type}) - ${ev.description.substring(0, 50)}"`
-  )
-  .join('\n')}
+${evidenceList.join('\n')}
 `;
 
     return await this.executePowerShellStrict({ script, validate_output: false });

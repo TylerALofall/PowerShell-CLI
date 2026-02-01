@@ -179,7 +179,7 @@ function Export-DocumentEvidence {
     
     # Create evidence package
     $timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
-    $evidenceId = if ($ClaimId) { "$ClaimId`_$timestamp" } else { "EVIDENCE_$timestamp" }
+    $evidenceId = if ($ClaimId) { "${ClaimId}_${timestamp}" } else { "EVIDENCE_$timestamp" }
     $evidenceDir = Join-Path -Path $OutputDirectory -ChildPath $evidenceId
     
     New-Item -Path $evidenceDir -ItemType Directory -Force | Out-Null
